@@ -122,6 +122,8 @@ def complete_names(text, state):
 
     return None
 
+db_file = os.path.expanduser('~/.calendar.sqlite3')
+
 def autocomplete_rm(text, state):
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
@@ -143,7 +145,6 @@ readline.set_completer(complete_names)
 # Now you can use tab completion in the Python shell
 
 # Set the path for the SQLite3 database file
-db_file = os.path.expanduser('~/.calendar.sqlite3')
 history_file = os.path.expanduser('~/.reminder_history')
 if os.path.exists(history_file):
     readline.read_history_file(history_file)
@@ -802,18 +803,27 @@ def get_due_events(n):
     target_time = current_time + datetime.timedelta(minutes=n)
 
     # Fetch the due events from the crontab table
-    cursor.execute("SELECT * FROM crontab")
+
+    query = """
+        select minute, hour, day_of_month, month, day_of_week, text, last_shown_msg from crontab
+    """
+
+    cursor.execute(query)
+    #cursor.execute("SELECT minute, hour, day_of_month, month, day_of_week, text, last_shown_msg FROM crontab")
     events = cursor.fetchall()
 
     due_events = []
     for event in events:
-        minute, hour, day_of_month, month, day_of_week, last_shown_msg = event
-        dier(event)
+        minute, hour, day_of_month, month, day_of_week, text, last_shown_msg = event
 
         # Check if the event is due based on the given parameters
         if is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
+            dier(last_shown_msg)
             if not last_shown_msg or (current_time - last_shown_msg).total_seconds() >= 60:
                 due_events.append(event)
+                debug("Is due")
+        else:
+            debug("Is not due")
 
     # Close the database connection
     conn.close()
