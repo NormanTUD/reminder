@@ -466,7 +466,7 @@ def print_events_on_date(year, month, day):
         print(f"\nEvents on {target_date}:")
         for event in events:
             date = event['date']
-            
+
             date_obj = datetime.datetime.fromtimestamp(date)
             date = date_obj.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -507,7 +507,7 @@ def count_events_on_date(date):
 
     debug(query)
     c.execute(query)
-    
+
     result = c.fetchone()
     conn.close()
     return result[0]
@@ -790,61 +790,77 @@ def print_calendar(year, month, blinking_dates=[], red_marked_days=[]):
             else:
                 print(str(holiday) + ": " + holiday_name + f", days until: {bcolors.ONGREEN}" + str(du) + f"{bcolors.ENDC}")
 
-def get_due_events(n):                      
-    # Connect to the SQLite database        
-    conn = sqlite3.connect(db_file)         
-    cursor = conn.cursor()                  
+def get_due_events(n):
+    # Connect to the SQLite database
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
 
-    # Get the current date and time         
-    current_time = datetime.datetime.now()  
-    
-    # Calculate the target time             
+    # Get the current date and time
+    current_time = datetime.datetime.now()
+
+    # Calculate the target time
     target_time = current_time + datetime.timedelta(minutes=n)
-    
+
     # Fetch the due events from the crontab table
-    cursor.execute("SELECT * FROM crontab")                                                                                                                                                                                                
-    events = cursor.fetchall()              
-    
-    due_events = []                         
-    for event in events:                                                                                                                                                                                                                   
+    cursor.execute("SELECT * FROM crontab")
+    events = cursor.fetchall()
+
+    due_events = []
+    for event in events:
         minute, hour, day_of_month, month, day_of_week, last_shown_msg = event
-        
+        dier(event)
+
         # Check if the event is due based on the given parameters
         if is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
             if not last_shown_msg or (current_time - last_shown_msg).total_seconds() >= 60:
-                due_events.append(event)        
+                due_events.append(event)
 
-    # Close the database connection         
-    conn.close()                            
-    
-    return due_events  
+    # Close the database connection
+    conn.close()
+
+    return due_events
 
 def is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
     # Check if the current time is within the target range
+    debug("===============================")
+    debug(f"Comparing current_time: {current_time} with target_time: {target_time}")
     if current_time <= target_time:
+        debug("Current time is within the target range")
         # Check if the minute, hour, day, month, and day of week match
+        debug(f"Comparing minute: {minute} with current_time.minute: {current_time.minute}")
         if minute == '*' or int(minute) == current_time.minute:
+            ok("Minute matches")
+            debug(f"Comparing hour: {hour} with current_time.hour: {current_time.hour}")
             if hour == '*' or int(hour) == current_time.hour:
+                ok("Hour matches")
+                debug(f"Comparing day_of_month: {day_of_month} with current_time.day: {current_time.day}")
                 if day_of_month == '*' or int(day_of_month) == current_time.day:
+                    ok("Day of month matches")
+                    debug(f"Comparing month: {month} with current_time.month: {current_time.month}")
                     if month == '*' or int(month) == current_time.month:
-                        warning(day_of_week)
-                        warning(current_time.weekday())
-                        if day_of_week == '*' or abs(int(day_of_week) - current_time.weekday()) >= 5:
+                        ok("Month matches")
+                        if day_of_week != "*":
+                            day_of_week = int(day_of_week) - 1
+                        debug(f"Comparing day_of_week: {day_of_week} with current_time.weekday(): {current_time.weekday()}")
+                        if day_of_week == '*' or abs(int(day_of_week) - current_time.weekday()) <= 5:
+                            ok("All conditions are met. Event is due.")
                             return True
                         else:
-                            print("Day of week doesnt match")
+                            debug("Day of week doesn't match")
                     else:
-                        print("Month doesnt match")
+                        debug("Month doesn't match")
                 else:
-                    print("Day of month doesnt match")
+                    debug("Day of month doesn't match")
             else:
-                print("hour doesnt match")
+                debug("Hour doesn't match")
         else:
-            print("minute doesnt match")
+            debug("Minute doesn't match")
     else:
-        print("current_time <= target_time")
+        debug("current_time <= target_time")
 
     return False
+
+
 
 def properly_formatted_datetime (date_string):
     if not date_string:
@@ -1044,13 +1060,13 @@ def msgbox (title, msg):
 def delete_event(event_id):
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
-    
+
     c.execute('SELECT dt, description FROM events WHERE id = ?', (event_id,))
     result = c.fetchone()
     if result:
         dt = datetime.datetime.fromtimestamp(result[0]).strftime('%Y-%m-%d %H:%M')
         description = result[1]
-        
+
         c.execute('DELETE FROM events WHERE id = ?', (event_id,))
         conn.commit()
         conn.close()
