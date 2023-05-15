@@ -194,20 +194,7 @@ def human_to_crontab(human_str):
     day_of_week = days_of_week.index(day_of_week.lower())
     return f"{minute} {hour} * * {day_of_week}"
 
-
-def show_upcoming_events_with_gui ():
-    # Get the current time
-    now = datetime.datetime.now()
-
-    # Get the events within the next 5 minutes
-    start_time = now # + datetime.timedelta(minutes=-5)
-    end_time = now + datetime.timedelta(minutes=5)
-
-    start_time = int(datetime.datetime.timestamp(start_time))
-    end_time = int(datetime.datetime.timestamp(end_time))
-
-    events = get_events(start_time, end_time, 1)
-
+def display_events (events):
     # Display the events in a message box
     if events:
         root = tk.Tk()
@@ -222,6 +209,22 @@ def show_upcoming_events_with_gui ():
             # Set the has_been_shown flag to 1 for this event
             time.sleep(2)
         root.destroy()
+
+
+def show_upcoming_events_with_gui ():
+    # Get the current time
+    now = datetime.datetime.now()
+
+    # Get the events within the next 5 minutes
+    start_time = now # + datetime.timedelta(minutes=-5)
+    end_time = now + datetime.timedelta(minutes=5)
+
+    start_time = int(datetime.datetime.timestamp(start_time))
+    end_time = int(datetime.datetime.timestamp(end_time))
+
+    events = get_events(start_time, end_time, 1)
+
+    display_events(events)
 
 def initialize_table ():
     # Define the table for events
@@ -809,7 +812,6 @@ def get_due_events(n):
     """
 
     cursor.execute(query)
-    #cursor.execute("SELECT minute, hour, day_of_month, month, day_of_week, text, last_shown_msg FROM crontab")
     events = cursor.fetchall()
 
     due_events = []
@@ -818,7 +820,6 @@ def get_due_events(n):
 
         # Check if the event is due based on the given parameters
         if is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
-            dier(last_shown_msg)
             if not last_shown_msg or (current_time - last_shown_msg).total_seconds() >= 60:
                 due_events.append(event)
                 debug("Is due")
@@ -1426,15 +1427,9 @@ def parse_line (user_input):
 
                         dts = int(parse_result["date"])
                         n = parse_result["name"]
-                        each = 0
-
-                        try:
-                            each = parse_result["each"]
-                        except Exception as e:
-                            each = 0
 
                         debug("User-input: " + str(user_input))
-                        new_event_id = insert_event(dts, n, each)
+                        new_event_id = insert_event(dts, n)
 
                         if new_event_id:
                             if new_date_month:
@@ -1570,7 +1565,6 @@ if args.headless:
         time.sleep(1)
 elif args.test:
     events_due_in_10_minutes = get_due_events(60)
-    dier(events_due_in_10_minutes)
     for event in events_due_in_10_minutes:
         print(event)
 else:
