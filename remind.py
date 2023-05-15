@@ -963,12 +963,6 @@ def parse_input (msg):
     name = None
     date = None
 
-    # 0 = Einmaliges Ereignis
-    # 1 = Jede Woche
-    # 2 = Jede zweite Woche
-
-    each = 0
-
     # Define the regular expression pattern
     split_by_pattern = r"^\s*(.*)\s*:\s(.*?)\s*$"
 
@@ -978,7 +972,6 @@ def parse_input (msg):
     date = None
     err = ""
     d = None
-    each_word = None
 
     if match:
         # Extract the first and second substrings using the groups() method of the match object
@@ -1002,15 +995,6 @@ def parse_input (msg):
         if each_match:
             parse_date_part = each_match.groups(3)[2]
             each_or_this = each_match.groups(1)[0]
-            each_word = each_or_this
-            if each_or_this == "this":
-                each = 0
-            else:
-                try:
-                    each = int(each_match.groups(2)[1])
-                except:
-                    debug("Couldnt be converted into integer: " + str(each_match.groups(2)[1]) + ", setting each to 1")
-                    each = 1
         else:
             parse_date_part = date
 
@@ -1040,8 +1024,6 @@ def parse_input (msg):
                         debug("not parsable: " + str(msg))
                         err = "Not parsable"
                         name = name,
-                        each = 0
-                        each_word = None
         except Exception as e:
             debug("parse_date_part: " + parse_date_part)
             err = str(e)
@@ -1054,9 +1036,7 @@ def parse_input (msg):
     ret = {
         'date': d,
         'err': err,
-        'name': name,
-        'each': each,
-        'each_word': each_word
+        'name': name
     }
 
     debug(ret)
