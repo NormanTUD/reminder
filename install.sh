@@ -11,3 +11,4 @@ pip install timefhuman easygui holidays matplotlib pandas tabulate
 
 mkdir -p ~/.config/systemd/user/
 cat reminder.service | sed -e "s#{basepath}#${PWD}#" > ~/.config/systemd/user/something.service
+systemctl --user daemon-reload
