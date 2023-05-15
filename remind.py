@@ -248,7 +248,8 @@ def initialize_table ():
         day_of_month TEXT NOT NULL,
         month TEXT NOT NULL,
         day_of_week TEXT NOT NULL,
-        text TEXT NOT NULL
+        text TEXT NOT NULL,
+        last_shown_msg DATETIME
     );
     '''
 
@@ -789,35 +790,34 @@ def print_calendar(year, month, blinking_dates=[], red_marked_days=[]):
             else:
                 print(str(holiday) + ": " + holiday_name + f", days until: {bcolors.ONGREEN}" + str(du) + f"{bcolors.ENDC}")
 
-def get_due_events(n):
-    # Connect to the SQLite database
-    conn = sqlite3.connect(db_file)
-    cursor = conn.cursor()
+def get_due_events(n):                      
+    # Connect to the SQLite database        
+    conn = sqlite3.connect(db_file)         
+    cursor = conn.cursor()                  
 
-    # Get the current date and time
-    current_time = datetime.datetime.now()
-
-    # Calculate the target time
+    # Get the current date and time         
+    current_time = datetime.datetime.now()  
+    
+    # Calculate the target time             
     target_time = current_time + datetime.timedelta(minutes=n)
-
+    
     # Fetch the due events from the crontab table
-    cursor.execute("SELECT * FROM crontab")
-    events = cursor.fetchall()
-
-    due_events = []
-    #dier(events)
-    for event in events:
-        minute, hour, day_of_month, month, day_of_week, _ = event
-
+    cursor.execute("SELECT * FROM crontab")                                                                                                                                                                                                
+    events = cursor.fetchall()              
+    
+    due_events = []                         
+    for event in events:                                                                                                                                                                                                                   
+        minute, hour, day_of_month, month, day_of_week, last_shown_msg = event
+        
         # Check if the event is due based on the given parameters
         if is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
-            due_events.append(event)
+            if not last_shown_msg or (current_time - last_shown_msg).total_seconds() >= 60:
+                due_events.append(event)        
 
-    # Close the database connection
-    conn.close()
-
-    return due_events
-
+    # Close the database connection         
+    conn.close()                            
+    
+    return due_events  
 
 def is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
     # Check if the current time is within the target range
@@ -827,7 +827,9 @@ def is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_
             if hour == '*' or int(hour) == current_time.hour:
                 if day_of_month == '*' or int(day_of_month) == current_time.day:
                     if month == '*' or int(month) == current_time.month:
-                        if day_of_week == '*' or int(day_of_week) == current_time.weekday():
+                        warning(day_of_week)
+                        warning(current_time.weekday())
+                        if day_of_week == '*' or abs(int(day_of_week) - current_time.weekday()) >= 5:
                             return True
                         else:
                             print("Day of week doesnt match")
@@ -1548,4 +1550,3 @@ elif args.test:
 else:
     # Start the GUI
     input_shell()
-
