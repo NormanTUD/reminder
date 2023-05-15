@@ -818,21 +818,25 @@ def get_due_events(n):
         select id, minute, hour, day_of_month, month, day_of_week, text, last_shown_msg from crontab
     """
 
+    debug(query)
+
     cursor.execute(query)
     events = cursor.fetchall()
 
     due_events = []
     for event in events:
-        id, minute, hour, day_of_month, month, day_of_week, text, last_shown_msg = event
+        idx, minute, hour, day_of_month, month, day_of_week, text, last_shown_msg = event
+
+        debug
 
         # Check if the event is due based on the given parameters
         if is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
             if not last_shown_msg or (current_time - last_shown_msg).total_seconds() >= 60:
                 e = {
                     "type": "crontab",
-                    "id": event[0],
-                    "description": event[6],
-                    "msg": event[6]
+                    "id": idx,
+                    "description": text,
+                    "msg": text
                 }
                 due_events.append(e)
                 debug("Is due:")
