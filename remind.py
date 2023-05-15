@@ -162,10 +162,11 @@ def set_crontab_event_has_been_shown (event_id):
 
     current_datetime = datetime.datetime.now()
     formatted_string = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    formatted_string = datetime_to_unix_timestamp(formatted_string)
 
     query = f'''
         UPDATE crontab
-        SET last_shown_msg = '{formatted_time}'
+        SET last_shown_msg = '{formatted_string}'
         WHERE id = '{event_id}'
     '''
 
@@ -858,6 +859,9 @@ def get_due_events(n):
 
             if last_shown_msg is None or not last_shown_msg:
                 time_diff = 0
+            else:
+                current_ts = datetime.datetime.now()
+                time_diff = int(last_shown_msg) - current_ts.timestamp()
 
             if last_shown_msg is None or not last_shown_msg or time_diff >= 60:
                 e = {
