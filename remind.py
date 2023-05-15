@@ -861,9 +861,9 @@ def get_due_events(n):
                 time_diff = 0
             else:
                 current_ts = datetime.datetime.now()
-                time_diff = int(last_shown_msg) - current_ts.timestamp()
+                time_diff = abs(int(last_shown_msg) - current_ts.timestamp())
 
-            if last_shown_msg is None or not last_shown_msg or time_diff >= 60:
+            if last_shown_msg is None or not last_shown_msg or time_diff > 60:
                 e = {
                     "type": "crontab",
                     "id": idx,
@@ -873,6 +873,8 @@ def get_due_events(n):
                 due_events.append(e)
                 debug("Is due:")
                 debug(e)
+            else:
+                debug(f"Not showing event {idx}. last_shown_msg: {last_shown_msg}, time_diff: {time_diff}")
         else:
             debug("Is not due")
 
