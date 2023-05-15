@@ -1575,14 +1575,13 @@ if args.headless:
         formatted_time = now.strftime("%A, %B %d, %Y %I:%M:%S %p")
         print(f'{formatted_time}: Checking events')
         initialize_table()
-
         show_upcoming_events_with_gui()
 
         events_due = get_due_events(60)
         display_events(events_due)
         time.sleep(1)
-elif args.test:
-
+#elif args.test:
+#
 else:
     # Start the GUI
     input_shell()
