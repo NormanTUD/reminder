@@ -769,11 +769,14 @@ def print_calendar(year, month, blinking_dates=[], red_marked_days=[]):
 
     de_holidays = holidays.DE(years=year, prov="SN")
     if len(future_holidays) >= 0:
-        print(f"{bcolors.OKGREEN}Anstehende Feiertage:{bcolors.ENDC}")
+        print(f"{bcolors.OKGREEN}Feiertage diesen Monat:{bcolors.ENDC}")
         for holiday in future_holidays:
             holiday_name = de_holidays.get(holiday)
             du = days_until(str(holiday))
-            print(str(holiday) + ": " + holiday_name + ", days until: " + str(du))
+            if "since" in du:
+                print(str(holiday) + ": " + holiday_name + f", days until: {bcolors.RED}" + str(du) + f"{bcolors.ENDC}")
+            else:
+                print(str(holiday) + ": " + holiday_name + f", days until: {bcolors.ONGREEN}" + str(du) + f"{bcolors.ENDC}")
 
 def properly_formatted_datetime (date_string):
     if not date_string:
