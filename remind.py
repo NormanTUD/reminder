@@ -204,7 +204,6 @@ def initialize_table ():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             dt INTEGER NOT NULL,
             description TEXT NOT NULL,
-            weeks_multiplier INTEGER DEFAULT 0,
             has_been_shown INTEGER DEFAULT 0
         )
     ''')
@@ -248,8 +247,8 @@ def insert_crontab(crontab_str, text):
     return event_id
 
 
-def insert_event(date, description, weeks_multiplier=1):
-    debug(f"insert_event({date}, {description}, {weeks_multiplier})")
+def insert_event(date, description):
+    debug(f"insert_event({date}, {description})")
 
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
@@ -260,9 +259,9 @@ def insert_event(date, description, weeks_multiplier=1):
 
     if count == 0:
         c.execute('''
-            INSERT INTO events (dt, description, weeks_multiplier)
-            VALUES (?, ?, ?)
-        ''', (date, description, weeks_multiplier))
+            INSERT INTO events (dt, description)
+            VALUES (?, ?)
+        ''', (date, description))
         conn.commit()
 
         event_id = c.lastrowid
@@ -307,13 +306,6 @@ def get_event_dates(year, month):
         end_date = datetime.date(year, month+1, 1)
     query = f'''
     SELECT DISTINCT dt FROM events WHERE 1
-    OR (
-        weeks_multiplier > 0 -- Repeating event
-        -- AND has_been_shown = 0 -- Has not been shown yet
-        AND strftime('%s', 'now') - dt >= weeks_multiplier * 604800 -- Repeating interval has passed
-        AND strftime('%s', 'now', '{start_date}') - dt >= 0 -- Event starts before end of day
-        AND (strftime('%s', 'now', '{start_date}') - dt) % (weeks_multiplier * 604800) = 0
-    ) -- Event is due today based on repeating interval
     '''
     debug(query)
     c.execute(query)
@@ -339,7 +331,7 @@ def get_events(start_date, end_date, only_unshown=0):
         only_unshown_query = " has_been_shown = '0' "
 
     query = f'''
-        SELECT id, dt, description, weeks_multiplier, has_been_shown
+        SELECT id, dt, description, has_been_shown
         FROM events
         WHERE dt >= ? AND dt <= ?
     '''
@@ -362,8 +354,7 @@ def get_events(start_date, end_date, only_unshown=0):
             'id': row[0],
             'dt': row[1],
             'description': row[2],
-            'weeks_multiplier': row[3],
-            'has_been_shown': row[4]
+            'has_been_shown': row[3]
         }
 
         if only_unshown == 0 or only_unshown and not event["has_been_shown"]:
@@ -386,17 +377,10 @@ def get_events_on_date(year, month, day):
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
     query = f'''
-        SELECT id, dt, description, weeks_multiplier
+        SELECT id, dt, description
         FROM events
         WHERE
         (dt >= {start_timestamp} and dt <= {end_timestamp})
-        OR (
-            weeks_multiplier > 0 -- Repeating event
-            -- AND has_been_shown = 0 -- Has not been shown yet
-            AND abs((strftime('%s', 'now') - dt) / (weeks_multiplier * 604800)) >= 600 -- Repeating interval has passed, interval allowance is 600 sec by default
-            AND ({start_timestamp} - dt) >= 0 -- Event starts before end of day
-            AND ({start_timestamp} - dt) % (weeks_multiplier * 604800) = 0
-        ) -- Event is due today based on repeating interval
         ORDER BY dt asc, description asc, id asc
     '''
 
@@ -406,10 +390,9 @@ def get_events_on_date(year, month, day):
     events = []
     for row in rows:
         event = {
-                'id': row[0],
-                'date': row[1],
-                'description': row[2],
-                'weeks_multiplier': row[3],
+            'id': row[0],
+            'date': row[1],
+            'description': row[2]
         }
 
         events.append(event)
@@ -421,7 +404,7 @@ def get_events_on_weekday(weekday):
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
     c.execute('''
-        SELECT id, datetime, description, weeks_multiplier
+        SELECT id, datetime, description
         FROM events
         WHERE strftime('%w', date) = ?
     ''', (weekday,))
@@ -429,11 +412,10 @@ def get_events_on_weekday(weekday):
     events = []
     for row in rows:
         event = {
-                'id': row[0],
-                'date': row[1],
-                'description': row[2],
-                'weeks_multiplier': row[3]
-                }
+            'id': row[0],
+            'date': row[1],
+            'description': row[2]
+        }
         events.append(event)
     conn.close()
     return events
@@ -1434,7 +1416,7 @@ def plot_event_statistics():
     c = conn.cursor()
 
     # Retrieve the data from the events table
-    query = "SELECT DATE(DATETIME(dt, 'unixepoch')) as date, weeks_multiplier, has_been_shown, COUNT(*) AS count FROM events GROUP BY dt"
+    query = "SELECT DATE(DATETIME(dt, 'unixepoch')) as date, has_been_shown, COUNT(*) AS count FROM events GROUP BY dt"
     df = pd.read_sql_query(query, conn)
     df['date'] = pd.to_datetime(df['date'])
 
