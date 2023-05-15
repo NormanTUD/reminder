@@ -538,6 +538,8 @@ def print_events_on_date(year, month, day):
             print(f"- {event['description']} ({bcolors.OKGREEN}{date}{bcolors.ENDC}, id: {event['id']})")
     print("")
 
+    list_crontab_events()
+
 def warning (msg):
     print(f"WARNING: {bcolors.WARNING}{msg}{bcolors.ENDC}")
     stack_trace = traceback.extract_tb(sys.exc_info()[2])
