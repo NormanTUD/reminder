@@ -4,6 +4,3 @@ Description=Reminderscript
 [Service]
 ExecStart={basepath}/run.sh --headless
 Restart=on-failure
-
-[Install]
-WantedBy=graphical.target
