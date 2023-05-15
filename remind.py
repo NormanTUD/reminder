@@ -24,6 +24,7 @@ parser = argparse.ArgumentParser(description='Reminder program')
 # Add an argument to disable the GUI and run the check code every 5 seconds
 parser.add_argument('--headless', action='store_true', help='disable the GUI and run the check code every 5 seconds')
 parser.add_argument('--debug', action='store_true', default=False, help='enable debug mode')
+parser.add_argument('--test', action='store_true', default=False, help='Go to the "test if"')
 
 args = parser.parse_args()
 
@@ -1539,11 +1540,12 @@ if args.headless:
         initialize_table()
         show_upcoming_events_with_gui()
         time.sleep(1)
-else:
-    # Start the GUI
-    #input_shell()
-
+elif args.test:
     events_due_in_10_minutes = get_due_events(60)
     dier(events_due_in_10_minutes)
     for event in events_due_in_10_minutes:
         print(event)
+else:
+    # Start the GUI
+    input_shell()
+
