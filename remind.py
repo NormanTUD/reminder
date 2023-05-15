@@ -204,7 +204,10 @@ def display_events (events):
             if "dt" in event:
                 t = from_unix_timestamp(event["dt"])
                 t = f"{t}: "
-            msg = f'{t}{event["description"]}'
+            desc = ""
+            if "description" in event:
+                desc = event["description"]
+            msg = f'{t}{desc}'
             set_event_has_been_shown(event['id'])
             print(f"Upcoming event: {msg}")
             open_urls_with_firefox(msg)
@@ -250,6 +253,7 @@ def initialize_table ():
     c = conn.cursor()
     query = '''
     CREATE TABLE IF NOT EXISTS crontab (
+        id INTEGER PRIMARY KEY,
         minute TEXT NOT NULL,
         hour TEXT NOT NULL,
         day_of_month TEXT NOT NULL,
@@ -811,7 +815,7 @@ def get_due_events(n):
     # Fetch the due events from the crontab table
 
     query = """
-        select minute, hour, day_of_month, month, day_of_week, text, last_shown_msg from crontab
+        select id, minute, hour, day_of_month, month, day_of_week, text, last_shown_msg from crontab
     """
 
     cursor.execute(query)
@@ -819,13 +823,20 @@ def get_due_events(n):
 
     due_events = []
     for event in events:
-        minute, hour, day_of_month, month, day_of_week, text, last_shown_msg = event
+        id, minute, hour, day_of_month, month, day_of_week, text, last_shown_msg = event
 
         # Check if the event is due based on the given parameters
         if is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
             if not last_shown_msg or (current_time - last_shown_msg).total_seconds() >= 60:
-                due_events.append(event)
-                debug("Is due")
+                e = {
+                    "type": "crontab",
+                    "id": event[0],
+                    "description": event[6],
+                    "msg": event[6]
+                }
+                due_events.append(e)
+                debug("Is due:")
+                debug(e)
         else:
             debug("Is not due")
 
@@ -1564,12 +1575,14 @@ if args.headless:
         formatted_time = now.strftime("%A, %B %d, %Y %I:%M:%S %p")
         print(f'{formatted_time}: Checking events')
         initialize_table()
+
         show_upcoming_events_with_gui()
+
+        events_due = get_due_events(60)
+        display_events(events_due)
         time.sleep(1)
 elif args.test:
-    events_due_in_10_minutes = get_due_events(60)
-    for event in events_due_in_10_minutes:
-        print(event)
+
 else:
     # Start the GUI
     input_shell()
