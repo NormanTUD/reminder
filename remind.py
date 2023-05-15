@@ -497,7 +497,7 @@ def print_events_on_date(year, month, day):
     if len(events) == 0:
         print(f"No events on {target_date}")
     else:
-        print(f"\nEvents on {target_date}:")
+        print(f"\nEinmalige Events {target_date}:")
         for event in events:
             date = event['date']
 
@@ -854,7 +854,12 @@ def get_due_events(n):
 
         # Check if the event is due based on the given parameters
         if is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
-            if not last_shown_msg or (current_time - last_shown_msg).total_seconds() >= 60:
+            time_diff = 999999
+
+            if last_shown_msg is None or not last_shown_msg:
+                time_diff = 0
+
+            if last_shown_msg is None or not last_shown_msg or time_diff >= 60:
                 e = {
                     "type": "crontab",
                     "id": idx,
