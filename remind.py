@@ -445,7 +445,7 @@ def print_events_on_date(year, month, day):
     if len(events) == 0:
         print(f"No events on {target_date}")
     else:
-        print(f"Events on {target_date}:")
+        print(f"\nEvents on {target_date}:")
         for event in events:
             date = event['date']
             
