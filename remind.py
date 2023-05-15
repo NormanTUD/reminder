@@ -497,21 +497,23 @@ def list_crontab_events():
     conn = sqlite3.connect(db_file)  # Replace 'your_database.db' with your actual database name
     cursor = conn.cursor()
 
+    cursor = conn.cursor()
+
     # Retrieve all events from the crontab table
     cursor.execute('SELECT * FROM crontab')
     events = cursor.fetchall()
 
-    # Print the events
+    # Prepare the data for tabulate
+    headers = ["ID", "Minute", "Hour", "Day of Month", "Month", "Day of Week", "Text", "Last Shown Message"]
+    data = []
     if events:
         for event in events:
-            print("ID: ", event[0])
-            print("Minute: ", event[1])
-            print("Hour: ", event[2])
-            print("Day of Month: ", event[3])
-            print("Month: ", event[4])
-            print("Day of Week: ", event[5])
-            print("Text: ", event[6])
-            print("------------------------------")
+            data.append(list(event))
+
+    # Print the events as an aligned table
+    if data:
+        table = tabulate(data, headers, tablefmt="grid")
+        print(table)
     else:
         print("No events found.")
 
