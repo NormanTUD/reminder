@@ -110,7 +110,7 @@ completer = rlcompleter.Completer()
 # Set the completer for the readline module
 
 def complete_names(text, state):
-    names = ["list", "help", "test", "rm", "cal", "calendar", "chose", "choose", "exit", "quit", "q", "stat", "debug"]
+    names = ["list", "help", "test", "rm", "rm crontab", "cal", "calendar", "chose", "choose", "exit", "quit", "q", "stat", "debug"]
     # Get all possible completions that match the current input
     matching_names = [name for name in names if name.startswith(text)]
 
@@ -490,6 +490,35 @@ def get_events_on_weekday(weekday):
         events.append(event)
     conn.close()
     return events
+
+
+def list_crontab_events():
+    # Connect to the SQLite database
+    conn = sqlite3.connect(db_file)  # Replace 'your_database.db' with your actual database name
+    cursor = conn.cursor()
+
+    # Retrieve all events from the crontab table
+    cursor.execute('SELECT * FROM crontab')
+    events = cursor.fetchall()
+
+    # Print the events
+    if events:
+        for event in events:
+            print("ID: ", event[0])
+            print("Minute: ", event[1])
+            print("Hour: ", event[2])
+            print("Day of Month: ", event[3])
+            print("Month: ", event[4])
+            print("Day of Week: ", event[5])
+            print("Text: ", event[6])
+            print("Last Shown Message: ", event[7])
+            print("------------------------------")
+    else:
+        print("No events found.")
+
+    # Close the database connection
+    cursor.close()
+    conn.close()
 
 def print_events_on_date(year, month, day):
     target_date = datetime.date(year, month, day)
@@ -1257,6 +1286,27 @@ def handle_cronlike (msg):
         else:
             warning("Something seems to have gone wrong. No ID")
 
+def handle_delete_crontab(id):
+    # Connect to the SQLite database
+    conn = sqlite3.connect(db_file)  # Replace 'your_database.db' with your actual database name
+    cursor = conn.cursor()
+
+    # Check if the entry exists
+    cursor.execute('SELECT * FROM crontab WHERE id = ?', (id,))
+    entry = cursor.fetchone()
+
+    if entry:
+        # Entry found, delete it
+        cursor.execute('DELETE FROM crontab WHERE id = ?', (id,))
+        conn.commit()
+        ok("Entry with ID {} deleted successfully.".format(id))  # Replace ok("string") with your own success message
+    else:
+        error("Entry with ID {} not found.".format(id), 0)  # Replace fail("message") with your own failure message
+
+    # Close the database connection
+    cursor.close()
+    conn.close()
+
 def handle_list_command(user_input):
     today = datetime.date.today()
 
@@ -1359,6 +1409,15 @@ def parse_line (user_input):
             user_input = f"{date}: {message}"
             debug("user_input: " + str(user_input))
 
+    if not skip:
+        list_match = re.match(r"(?:delete|rm)\s*crontab\s*(\d+)$", user_input)
+
+        if list_match:
+            try:
+                handle_delete_crontab(list_match.group(1))
+            except Exception as e:
+                warning(e)
+            skip = True
 
     if not skip:
         list_match = re.match(r"list\s*(\d{4})-(\d{1,2})-(\d{1,2})", user_input)
