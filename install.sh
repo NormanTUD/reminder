@@ -7,4 +7,4 @@ python3 -m venv ~/.reminder_environment
 
 source ~/.reminder_environment/bin/activate
 
-pip install timefhuman easygui holidays matplotlib pandas
+pip install timefhuman easygui holidays matplotlib pandas tabulate

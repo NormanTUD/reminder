@@ -12,7 +12,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
     BLINK = '\033[33;5m'
 
-
+from tabulate import tabulate
 import argparse
 import matplotlib.pyplot as plt
 import webbrowser
@@ -110,7 +110,7 @@ completer = rlcompleter.Completer()
 # Set the completer for the readline module
 
 def complete_names(text, state):
-    names = ["list", "help", "test", "rm", "rm crontab", "cal", "calendar", "chose", "choose", "exit", "quit", "q", "stat", "debug"]
+    names = ["list", "list crontab", "help", "test", "rm", "rm crontab", "cal", "calendar", "chose", "choose", "exit", "quit", "q", "stat", "debug"]
     # Get all possible completions that match the current input
     matching_names = [name for name in names if name.startswith(text)]
 
@@ -511,7 +511,6 @@ def list_crontab_events():
             print("Month: ", event[4])
             print("Day of Week: ", event[5])
             print("Text: ", event[6])
-            print("Last Shown Message: ", event[7])
             print("------------------------------")
     else:
         print("No events found.")
@@ -1380,6 +1379,11 @@ def parse_line (user_input):
     if user_input == "clear":
         skip = True
         os.system('clear')
+
+    if user_input == "list crontab":
+        list_crontab_events()
+        skip = True
+
     if user_input == "list":
         print_overview()
         skip = True
