@@ -464,6 +464,7 @@ class bcolors:
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     RED  = '\033[91m'
+    ONGREEN = '\033[0;102m'
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
@@ -725,18 +726,26 @@ def print_calendar(year, month, blinking_dates=[], red_marked_days=[]):
         for day in week:
             real_day = real_day + 1
             day_str = ""
+
+            holidays_green = [date.day for date in saxony_holidays_this_month]
+
             if day in red_marked_days:
                 day_str = f"{bcolors.RED}{day:0>2}{bcolors.ENDC}"
             else:
                 day_str = f"{day:0>2}"
 
+
             if day_str == "00":
                 day_str = ""
 
-            if real_day in [date.day for date in saxony_holidays_this_month]:
+            if real_day in holidays_green:
+                day_str = f"{bcolors.ONGREEN}{day_str}{bcolors.ENDC}"
+
+            elif real_day in [date.day for date in saxony_holidays_this_month]:
                 day_str = f"{bcolors.OKGREEN}{day_str}{bcolors.ENDC}"
                 if real_day >= current_day:
-                    future_holidays.append([date for date in saxony_holidays_this_month if date.day == real_day][0])
+                    future_holidays.append([date for date in saxony_holidays_this_month if date.day >= real_day][0])
+
             else:
                 is_we = False
                 try:
@@ -750,7 +759,6 @@ def print_calendar(year, month, blinking_dates=[], red_marked_days=[]):
 
                 if real_day in blinking_dates:
                     day_str = f"{bcolors.BLINK}{day_str}{bcolors.ENDC}"
-
 
                 if year == current_year and month == current_month and current_day == real_day:
                     day_str = f"{bcolors.UNDERLINE}{day_str}{bcolors.ENDC}"
