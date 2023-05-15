@@ -155,6 +155,26 @@ import time
 import tkinter as tk
 from tkinter.messagebox import showinfo
 
+def set_crontab_event_has_been_shown (event_id):
+    debug(f"set_event_has_been_shown({event_id})")
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+
+    current_datetime = datetime.datetime.now()
+    formatted_string = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+    query = f'''
+        UPDATE crontab
+        SET last_shown_msg = '{formatted_time}'
+        WHERE id = '{event_id}'
+    '''
+
+    debug(query)
+
+    c.execute(query)
+    conn.commit()
+    conn.close()
+
 def set_event_has_been_shown(event_id):
     debug(f"set_event_has_been_shown({event_id})")
     conn = sqlite3.connect(db_file)
@@ -194,7 +214,7 @@ def human_to_crontab(human_str):
     day_of_week = days_of_week.index(day_of_week.lower())
     return f"{minute} {hour} * * {day_of_week}"
 
-def display_events (events):
+def display_events (events, set_crontab_event_shown=0):
     # Display the events in a message box
     if events:
         root = tk.Tk()
@@ -208,7 +228,10 @@ def display_events (events):
             if "description" in event:
                 desc = event["description"]
             msg = f'{t}{desc}'
-            set_event_has_been_shown(event['id'])
+            if set_crontab_event_shown == 0:
+                set_event_has_been_shown(event['id'])
+            else:
+                set_crontab_event_has_been_shown(event['id'])
             print(f"Upcoming event: {msg}")
             open_urls_with_firefox(msg)
             showinfo('Upcoming Event', msg)
@@ -1582,7 +1605,7 @@ if args.headless:
         show_upcoming_events_with_gui()
 
         events_due = get_due_events(60)
-        display_events(events_due)
+        display_events(events_due, 1)
         time.sleep(1)
 #elif args.test:
 #
