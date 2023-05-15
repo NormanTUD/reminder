@@ -1,3 +1,18 @@
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    RED  = '\033[91m'
+    ONGREEN = '\033[0;102m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    BLINK = '\033[33;5m'
+
+
 import argparse
 import matplotlib.pyplot as plt
 import webbrowser
@@ -39,6 +54,15 @@ timezone_adjustment = 2 * 3600 # difference to GMT, currently set to germany/ber
 
 import readline
 import rlcompleter
+
+
+def debug (msg):
+    if not args.debug:
+        return
+    print(f"{bcolors.HEADER}{msg}{bcolors.ENDC}")
+    stack_trace = traceback.extract_tb(sys.exc_info()[2])
+    # Print the modified stack trace
+    traceback.print_list(stack_trace)
 
 
 def read_input_without_history(prompt='> '):
@@ -201,18 +225,22 @@ def initialize_table ():
     # Define the table for events
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
-    c.execute('''
+    query = '''
         CREATE TABLE IF NOT EXISTS events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             dt INTEGER NOT NULL,
             description TEXT NOT NULL,
             has_been_shown INTEGER DEFAULT 0
         )
-    ''')
+    '''
+
+    debug(query)
+
+    c.execute(query)
     conn.commit()
 
     c = conn.cursor()
-    c.execute('''
+    query = '''
     CREATE TABLE IF NOT EXISTS crontab (
         minute TEXT NOT NULL,
         hour TEXT NOT NULL,
@@ -221,7 +249,11 @@ def initialize_table ():
         day_of_week TEXT NOT NULL,
         text TEXT NOT NULL
     );
-    ''')
+    '''
+
+    debug(query)
+
+    c.execute(query)
     conn.commit()
 
     conn.close()
@@ -439,34 +471,12 @@ def print_events_on_date(year, month, day):
             print(f"- {event['description']} ({bcolors.OKGREEN}{date}{bcolors.ENDC}, id: {event['id']})")
     print("")
 
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    RED  = '\033[91m'
-    ONGREEN = '\033[0;102m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    BLINK = '\033[33;5m'
-
 def warning (msg):
     print(f"WARNING: {bcolors.WARNING}{msg}{bcolors.ENDC}")
     stack_trace = traceback.extract_tb(sys.exc_info()[2])
     # Print the modified stack trace
     traceback.print_list(stack_trace)
 
-def debug (msg):
-    if not args.debug:
-        return
-    print(f"{bcolors.HEADER}{msg}{bcolors.ENDC}")
-    stack_trace = traceback.extract_tb(sys.exc_info()[2])
-    # Print the modified stack trace
-    traceback.print_list(stack_trace)
 
 def ok (msg):
     print(f"{bcolors.OKGREEN}{msg}{bcolors.ENDC}")
@@ -777,6 +787,61 @@ def print_calendar(year, month, blinking_dates=[], red_marked_days=[]):
                 print(str(holiday) + ": " + holiday_name + f", days until: {bcolors.RED}" + str(du) + f"{bcolors.ENDC}")
             else:
                 print(str(holiday) + ": " + holiday_name + f", days until: {bcolors.ONGREEN}" + str(du) + f"{bcolors.ENDC}")
+
+def get_due_events(n):
+    # Connect to the SQLite database
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+
+    # Get the current date and time
+    current_time = datetime.datetime.now()
+
+    # Calculate the target time
+    target_time = current_time + datetime.timedelta(minutes=n)
+
+    # Fetch the due events from the crontab table
+    cursor.execute("SELECT * FROM crontab")
+    events = cursor.fetchall()
+
+    due_events = []
+    #dier(events)
+    for event in events:
+        minute, hour, day_of_month, month, day_of_week, _ = event
+
+        # Check if the event is due based on the given parameters
+        if is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
+            due_events.append(event)
+
+    # Close the database connection
+    conn.close()
+
+    return due_events
+
+
+def is_due(minute, hour, day_of_month, month, day_of_week, current_time, target_time):
+    # Check if the current time is within the target range
+    if current_time <= target_time:
+        # Check if the minute, hour, day, month, and day of week match
+        if minute == '*' or int(minute) == current_time.minute:
+            if hour == '*' or int(hour) == current_time.hour:
+                if day_of_month == '*' or int(day_of_month) == current_time.day:
+                    if month == '*' or int(month) == current_time.month:
+                        if day_of_week == '*' or int(day_of_week) == current_time.weekday():
+                            return True
+                        else:
+                            print("Day of week doesnt match")
+                    else:
+                        print("Month doesnt match")
+                else:
+                    print("Day of month doesnt match")
+            else:
+                print("hour doesnt match")
+        else:
+            print("minute doesnt match")
+    else:
+        print("current_time <= target_time")
+
+    return False
 
 def properly_formatted_datetime (date_string):
     if not date_string:
@@ -1411,42 +1476,6 @@ def input_shell():
             # Add the current command to the history
             readline.add_history(user_input)
 
-def get_events_due(n):
-    conn = sqlite3.connect('your_database.db')  # Replace 'your_database.db' with your actual database file
-    cursor = conn.cursor()
-
-    current_time = datetime.now()
-    end_time = current_time + timedelta(minutes=n)
-
-    query = """
-    SELECT *
-    FROM crontab
-    WHERE datetime('now') <= datetime(
-        strftime('%Y-%m-%d %H:%M', 'now', 'localtime'),
-        '+' || minute || ' minutes',
-        '+' || hour || ' hours',
-        '+' || day_of_month || ' days',
-        '+' || month || ' months',
-        '+' || day_of_week || ' days'
-    )
-    AND datetime(
-        strftime('%Y-%m-%d %H:%M', 'now', 'localtime'),
-        '+' || minute || ' minutes',
-        '+' || hour || ' hours',
-        '+' || day_of_month || ' days',
-        '+' || month || ' months',
-        '+' || day_of_week || ' days'
-    ) <= ?
-    """
-
-    cursor.execute(query, (end_time.strftime('%Y-%m-%d %H:%M:%S'),))
-    events = cursor.fetchall()
-
-    conn.close()
-
-    return events
-
-
 def plot_event_statistics():
     # Connect to the database
     conn = sqlite3.connect(db_file)
@@ -1512,4 +1541,9 @@ if args.headless:
         time.sleep(1)
 else:
     # Start the GUI
-    input_shell()
+    #input_shell()
+
+    events_due_in_10_minutes = get_due_events(60)
+    dier(events_due_in_10_minutes)
+    for event in events_due_in_10_minutes:
+        print(event)
