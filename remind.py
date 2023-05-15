@@ -1264,7 +1264,7 @@ from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
 def handle_cronlike (msg):
-    match = re.match(r"every (\b\w+\b) at (\d{1,2})(?::(\d{2})):\s+(.*)\s*", msg)
+    match = re.match(r"e(?:very|ach)\s*(\b\w+\b)(?:\s*at)?\s*(\d{1,2})(?::(\d{2})):\s+(.*)\s*", msg)
 
     if match:
         crontab_str = human_to_crontab(msg)
