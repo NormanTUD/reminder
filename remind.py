@@ -1,6 +1,8 @@
 import argparse
 import matplotlib.pyplot as plt
 import webbrowser
+import pandas as pd
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='Reminder program')
 
@@ -1406,9 +1408,41 @@ def input_shell():
             # Add the current command to the history
             readline.add_history(user_input)
 
-import sqlite3
-import pandas as pd
-import matplotlib.pyplot as plt
+def get_events_due(n):
+    conn = sqlite3.connect('your_database.db')  # Replace 'your_database.db' with your actual database file
+    cursor = conn.cursor()
+
+    current_time = datetime.now()
+    end_time = current_time + timedelta(minutes=n)
+
+    query = """
+    SELECT *
+    FROM crontab
+    WHERE datetime('now') <= datetime(
+        strftime('%Y-%m-%d %H:%M', 'now', 'localtime'),
+        '+' || minute || ' minutes',
+        '+' || hour || ' hours',
+        '+' || day_of_month || ' days',
+        '+' || month || ' months',
+        '+' || day_of_week || ' days'
+    )
+    AND datetime(
+        strftime('%Y-%m-%d %H:%M', 'now', 'localtime'),
+        '+' || minute || ' minutes',
+        '+' || hour || ' hours',
+        '+' || day_of_month || ' days',
+        '+' || month || ' months',
+        '+' || day_of_week || ' days'
+    ) <= ?
+    """
+
+    cursor.execute(query, (end_time.strftime('%Y-%m-%d %H:%M:%S'),))
+    events = cursor.fetchall()
+
+    conn.close()
+
+    return events
+
 
 def plot_event_statistics():
     # Connect to the database
