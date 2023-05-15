@@ -1353,6 +1353,21 @@ def parse_line (user_input):
         skip = True
 
     if not skip:
+        #remind each 0 9 * * 16: heute abend karl nachhilfe 18
+        pattern = r"remind\s*each\s*([0-9\*]+\s+[0-9\*]+\s+[0-9\*]+\s+[0-9\*]+\s*[0-9\*]+)\s+(.*)"
+        
+        match = re.search(pattern, user_input)
+
+        if match:
+            time_str = match.group(1)
+            text = match.group(2)
+            new_id = insert_crontab(time_str, text)
+            if(new_id):
+                skip = True
+            else:
+                warning("Could not create")
+
+    if not skip:
         # Define a regular expression pattern to match the desired pattern
         pattern = r"(?:ScaDS\.AI\s*Chat\s*Bot:)\s*remind\ssingle\s*(\d{4}-\d{2}-\d{2}\s*\d{1,2}(?::\d{1,2}(?::\d{1,2})?)?)\s+(.*)"
 
