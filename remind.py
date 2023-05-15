@@ -200,8 +200,11 @@ def display_events (events):
         root = tk.Tk()
         root.withdraw()
         for event in events:
-            t = from_unix_timestamp(event["dt"])
-            msg = f'{t}: {event["description"]}'
+            t = ""
+            if "dt" in event:
+                t = from_unix_timestamp(event["dt"])
+                t = f"{t}: "
+            msg = f'{t}{event["description"]}'
             set_event_has_been_shown(event['id'])
             print(f"Upcoming event: {msg}")
             open_urls_with_firefox(msg)
