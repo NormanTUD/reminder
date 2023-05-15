@@ -1384,15 +1384,14 @@ def parse_line (user_input):
         skip = True
 
     if not skip:
-        match = re.match(r"every (\b\w+\b) at (\d{1,2})(?::(\d{2}))", user_input)
+        match = re.match(r"e(?:very|ach)\s*(\b\w+\b)\s*(?:at)?\s*(\d{1,2})(?::(\d{2}))", user_input)
 
         if match:
             try:
                 handle_cronlike(user_input)
+                skip = True
             except Exception as e:
                 error(e, 0)
-
-            skip = True
 
     if not skip:
         skip = handle_rm(user_input)
