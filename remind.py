@@ -741,10 +741,9 @@ def print_calendar(year, month, blinking_dates=[], red_marked_days=[]):
             if real_day in holidays_green:
                 day_str = f"{bcolors.ONGREEN}{day_str}{bcolors.ENDC}"
 
-            elif real_day in [date.day for date in saxony_holidays_this_month]:
+            if real_day in [date.day for date in saxony_holidays_this_month]:
                 day_str = f"{bcolors.OKGREEN}{day_str}{bcolors.ENDC}"
-                if real_day >= current_day:
-                    future_holidays.append([date for date in saxony_holidays_this_month if date.day >= real_day][0])
+                future_holidays.append([date for date in saxony_holidays_this_month if date.day >= real_day][0])
 
             else:
                 is_we = False
@@ -785,7 +784,7 @@ def print_calendar(year, month, blinking_dates=[], red_marked_days=[]):
         print(week_str)
 
     de_holidays = holidays.DE(years=year, prov="SN")
-    if future_holidays:
+    if len(future_holidays) >= 0:
         print(f"{bcolors.OKGREEN}Anstehende Feiertage:{bcolors.ENDC}")
         for holiday in future_holidays:
             holiday_name = de_holidays.get(holiday)
